@@ -1,12 +1,12 @@
 def add_group_order_no(customer,doc):
     def get_customer_group(customer):
         customers = []
-        is_group_customer = frappe.db.get_value("Customer", customers, "is_group_customer")
+        is_group_customer = frappe.db.get_value("Customer", customer, "is_group_customer")
         if is_group_customer == 1:
-            customer.append(customers)
-            customer.append(frappe.db.get_all("Group Customers", filters={'parent':customers}, pluck="customer_in_group"))
+            customers.append(customer)
+            customers.append(frappe.db.get_all("Group Customers", filters={'parent':customer}, pluck="customer_in_group"))
         elif is_group_customer == 0:
-            exists_ingroup = frappe.db.get_all("Group Customers", filters={'customer_in_group':customers}, fields=['*'])
+            exists_ingroup = frappe.db.get_all("Group Customers", filters={'customer_in_group':customer}, fields=['*'])
             if exists_ingroup != []:
                 customers.append(exists_ingroup[0].parent)
                 customers.append(frappe.db.get_all("Group Customers", filters={'parent':exists_ingroup[0].parent}, pluck="customer_in_group"))
@@ -26,7 +26,7 @@ def add_group_order_no(customer,doc):
             next_number = 1
         return f"{next_number:04d}"
     customers = get_customer_group(customer)
-    existing_group_order_no = frappe.db.get_value("Sales Order", {"delivery_date":doc.delivery_date,"customer":["in", customers]}, "group_order_no")
+    existing_group_order_no = frappe.db.get_all("Sales Order", filters={"delivery_date":doc.delivery_date,"customer":["in", customers]}, fields=["group_order_no"])
     if existing_group_order_no:
         doc.group_order_no = existing_group_order_no[0].group_order_no
     else:
